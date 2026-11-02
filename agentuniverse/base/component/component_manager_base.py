@@ -5,7 +5,6 @@
 # @Author  : jerry.zzw 
 # @Email   : jerry.zzw@antgroup.com
 # @FileName: component_manager_base.py
-import copy
 from typing import TypeVar, Generic
 
 from agentuniverse.base.config.application_configer.application_config_manager import ApplicationConfigManager
@@ -39,12 +38,17 @@ class ComponentManagerBase(Generic[ComponentTypeVar]):
 
     def get_instance_obj(self, component_instance_name: str,
                          appname: str = None, new_instance: bool = None) -> ComponentTypeVar:
-        """Return the component instance object."""
+        """Return the component instance object.
+
+        When ``new_instance`` is true, return ``create_copy()`` of the
+        registered instance so callers do not share its mutable state.
+        """
         appname = appname or ApplicationConfigManager().app_configer.base_info_appname
         instance_code = f'{appname}.{self._component_type.value.lower()}.{component_instance_name}'
-        if new_instance:
-            return copy.deepcopy(self._instance_obj_map.get(instance_code))
-        return self._instance_obj_map.get(instance_code)
+        instance = self._instance_obj_map.get(instance_code)
+        if new_instance and instance is not None:
+            return instance.create_copy()
+        return instance
 
     def get_instance_name_list(self) -> list[str]:
         """Return the component instance list."""
